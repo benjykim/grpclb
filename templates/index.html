@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>
+        draw star by number
+    </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <h1> 트랜잭션 생성 횟수 입력</h1><br>
+    <form method="POST" action="/tx_proposal">
+        <div>
+            <label for="tx_num"> 몇 개? </label>
+            <input type="text" name="tx_num">
+        </div>
+        <div class='button'>
+            <button type="submit">트랜잭션 생성</button>
+        </div>
+    </form>
+    <div>
+        <p>
+            {% if tx_num == None %}
+                <h5> 아직 아무 값도 입력 안되었습니다. </h5>
+            {% else %}
+                <h5> {{tx_num}} 를 입력받았습니다. </h5>
+            {% endif %}
+        </p>
+    </div>
+</body>
+</html>

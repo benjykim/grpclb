@@ -8,13 +8,19 @@ service Grpclb {
 }
 
 message TxRequest {
-    string channelName = 1;
+    string channelId = 1;
     string chaincodeName = 2;
-    string functionName = 3;
-    repeated string args = 4;
+    string fcn = 3;
+    repeated bytes args = 4;
 }
 
 message TxResponse {
     bytes payload = 1;
-    bytes header = 2;
+    string txId = 2;
+    TransactionValidation validation = 3;
+}
+
+message TransactionValidation {
+    int32 code = 1;
+    string description = 2;
 }
