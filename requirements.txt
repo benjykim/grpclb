@@ -1,7 +1,0 @@
-flask
-flask_restful
-pythonping
-apscheduler
-docker
-requests
-

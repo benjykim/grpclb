@@ -15,52 +15,98 @@ import grpclb_pb2_grpc
 loop = asyncio.get_event_loop()
 cli = Client(net_profile="test/fixtures/network.json")
 org1_admin = cli.get_user(org_name='org1.example.com', name='Admin')
-    
-# 이 함수안에 prometheus 관련 로직 넣기
-def get_low_latency_endorsing_peers():
+
+
+# if the CPU usage of endorsing peer exceeds 70%, then remove that peer from endorsing peer list
+def exclude_endorsing_peer_with_cpu_usage(org1_node_list, org2_node_list):
+    peers_to_be_excluded = []
+
+    res = req.post("http://172.25.0.14:5001/get_cpu_list", headers={"content-type":"application/json"})
+    json_data = res.json()
+
+    for peer in json_data:
+        if peer['cpu_usage'] > 70.0:
+            peers_to_be_excluded.append(peer['node'])
+
+    for peer in peers_to_be_excluded:
+        if 'org1' in peer:
+            org1_node_list.remove(peer)
+        elif 'org2' in peer:
+            org2_node_list.remove(peer)
+
+    return org1_node_list, org2_node_list
+
+# if the Memory usage of endorsing peer exceeds 60%, then remove that peer from endorsing peer list
+def exclude_endorsing_peer_with_mem_usage(org1_node_list, org2_node_list):
+    peers_to_be_excluded = []
+
+    res = req.post("http://172.25.0.14:5001/get_mem_list", headers={"content-type":"application/json"})
+    json_data = res.json()
+
+    for peer in json_data:
+        if peer['mem_usage'] > 60.0:
+            peers_to_be_excluded.append(peer['node'])
+
+    for peer in peers_to_be_excluded:
+        if 'org1' in peer:
+            org1_node_list.remove(peer)
+        elif 'org2' in peer:
+            org2_node_list.remove(peer)
+
+    return org1_node_list, org2_node_list
+
+def get_endorsing_peers_with_latency():
     org1_node_list = []
     org2_node_list = []
     peers = []
 
-    res = req.post("http://172.17.0.2:5000/get_latency_list", headers={"content-type":"application/json"})
-    res = res.json()
+    res = req.post("http://172.17.0.3:5000/get_latency_list", headers={"content-type":"application/json"})
+    json_data = res.json()
 
-    for peer in res:
-        if peer['node'][6:].startswith("org1"):
+    for peer in json_data:
+        if 'org1' in peer['node']:
             org1_node_list.append(peer['node'])
-        elif peer['node'][6:].startswith("org2"):
+        elif 'org2' in peer['node']:
             org2_node_list.append(peer['node'])
     
-    peers.append(org1_node_list[0])
-    peers.append(org2_node_list[0])
-    # print(peers)
+    # exclude endorsing peers with cpu, memory usage (be used like filter...)
+    org1_node_list, org2_node_list = exclude_endorsing_peer_with_cpu_usage(org1_node_list, org2_node_list)
+    org1_node_list, org2_node_list = exclude_endorsing_peer_with_mem_usage(org1_node_list, org2_node_list)
+
+    # select endorsing peers --> if there is any available endorsing peers, then error...(try&catch should be needed...)
+    peers = select_endorsing_peers(org1_node_list, org2_node_list)
+
+    # calculate the latency of selected peers
+    latency = calculate_avg_latency(json_data, peers)
+
+    return peers, latency
+
+def select_endorsing_peers(org1_node_list, org2_node_list):
+    peers = []
+    if not org1_node_list:
+        print("org1_node_list is a empty list!")
+    else:
+        peers.append(org1_node_list[0])
+    
+    if not org2_node_list:
+        print("org2_node_list is a empty list!")
+    else:
+        peers.append(org2_node_list[0])
+    
     return peers
 
-def get_average_latency():
-    org1_node_latency_list = []
-    org2_node_latency_list = []
-    latencies = []
-
-    res = req.post("http://127.0.0.1:5000/get_latency_list", headers={"content-type":"application/json"})
-    res = res.json()
-
-    for peer in res:
-        if peer['node'][6:].startswith("org1"):
-            org1_node_latency_list.append(peer['latency'])
-        elif peer['node'][6:].startswith("org2"):
-            org2_node_latency_list.append(peer['latency'])
-
-    latencies.append(org1_node_latency_list[0])
-    latencies.append(org2_node_latency_list[0])
-    avg_latency = (latencies[0] + latencies[1]) / 2
-    # print("avg_latency: "+ str(avg_latency))
+def calculate_avg_latency(json_data, peers):
+    latency = 0
+    for selected_peer in peers:
+        for peer in json_data:
+            if selected_peer in peer['node']:
+                latency += peer['latency']
+    avg_latency = latency / 2
     return avg_latency
 
 class GrpclbServicer(grpclb_pb2_grpc.GrpclbServicer):
     def Execute(self, request, context):
-        avg_latency = get_average_latency()
-        peers = get_low_latency_endorsing_peers()
-
+        peers, avg_latency = get_endorsing_peers_with_latency()
         # The response should be true if succeed
         response = loop.run_until_complete(cli.chaincode_invoke(
                         requestor=org1_admin,  
@@ -68,7 +114,7 @@ class GrpclbServicer(grpclb_pb2_grpc.GrpclbServicer):
                         peers=peers,   
                         args=request.args,
                         cc_name=request.chaincodeName,  
-                        avg_latency=get_average_latency(),
+                        avg_latency=avg_latency,
                         transient_map=None, # optional, for private data
                         wait_for_event=True, # for being sure chaincode invocation has been commited in the ledger, default is on tx event
                         ))
