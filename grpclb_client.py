@@ -9,7 +9,6 @@ from hfc.fabric import Client
 channelName = "mychannel"
 chaincodeName = "mycc"
 functionName = "ping"
-# numOfTxs = 10
 address = "127.0.0.1:50051"
 
 def run():
