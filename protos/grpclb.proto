@@ -12,9 +12,9 @@ message TxRequest {
     string chaincodeName = 2;
     string functionName = 3;
     repeated string args = 4;
+    int32 numOfTxs = 5;
 }
 
 message TxResponse {
-    bytes payload = 1;
-    bytes header = 2;
+    string response = 1;
 }

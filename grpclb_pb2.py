@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0cgrpclb.proto\"[\n\tTxRequest\x12\x13\n\x0b\x63hannelName\x18\x01 \x01(\t\x12\x15\n\rchaincodeName\x18\x02 \x01(\t\x12\x14\n\x0c\x66unctionName\x18\x03 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x04 \x03(\t\"-\n\nTxResponse\x12\x0f\n\x07payload\x18\x01 \x01(\x0c\x12\x0e\n\x06header\x18\x02 \x01(\x0c\x32R\n\x06Grpclb\x12$\n\x07\x45xecute\x12\n.TxRequest\x1a\x0b.TxResponse\"\x00\x12\"\n\x05Query\x12\n.TxRequest\x1a\x0b.TxResponse\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x0cgrpclb.proto\"m\n\tTxRequest\x12\x13\n\x0b\x63hannelName\x18\x01 \x01(\t\x12\x15\n\rchaincodeName\x18\x02 \x01(\t\x12\x14\n\x0c\x66unctionName\x18\x03 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x04 \x03(\t\x12\x10\n\x08numOfTxs\x18\x05 \x01(\x05\"\x1e\n\nTxResponse\x12\x10\n\x08response\x18\x01 \x01(\t2R\n\x06Grpclb\x12$\n\x07\x45xecute\x12\n.TxRequest\x1a\x0b.TxResponse\"\x00\x12\"\n\x05Query\x12\n.TxRequest\x1a\x0b.TxResponse\"\x00\x62\x06proto3'
 )
 
 
@@ -61,6 +61,13 @@ _TXREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='numOfTxs', full_name='TxRequest.numOfTxs', index=4,
+      number=5, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -74,7 +81,7 @@ _TXREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=16,
-  serialized_end=107,
+  serialized_end=125,
 )
 
 
@@ -87,16 +94,9 @@ _TXRESPONSE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='payload', full_name='TxResponse.payload', index=0,
-      number=1, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"",
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='header', full_name='TxResponse.header', index=1,
-      number=2, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"",
+      name='response', full_name='TxResponse.response', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -112,8 +112,8 @@ _TXRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=109,
-  serialized_end=154,
+  serialized_start=127,
+  serialized_end=157,
 )
 
 DESCRIPTOR.message_types_by_name['TxRequest'] = _TXREQUEST
@@ -143,8 +143,8 @@ _GRPCLB = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=156,
-  serialized_end=238,
+  serialized_start=159,
+  serialized_end=241,
   methods=[
   _descriptor.MethodDescriptor(
     name='Execute',

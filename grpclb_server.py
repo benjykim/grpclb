@@ -2,6 +2,7 @@ from concurrent import futures
 import logging
 import asyncio
 import ast
+import time
 import socket, requests as req, json, yaml, re, copy
 
 from hfc.fabric import Client
@@ -13,7 +14,7 @@ import grpclb_pb2_grpc
 
 # fabric-sdk-py
 loop = asyncio.get_event_loop()
-cli = Client(net_profile="test/fixtures/network.json")
+cli = Client(net_profile="./network.json")
 org1_admin = cli.get_user(org_name='org1.example.com', name='Admin')
 
 
@@ -21,7 +22,7 @@ org1_admin = cli.get_user(org_name='org1.example.com', name='Admin')
 def exclude_endorsing_peer_with_cpu_usage(org1_node_list, org2_node_list):
     peers_to_be_excluded = []
 
-    res = req.post("http://172.25.0.14:5001/get_cpu_list", headers={"content-type":"application/json"})
+    res = req.post("http://172.29.0.2:5001/get_cpu_list", headers={"content-type":"application/json"})
     json_data = res.json()
 
     for peer in json_data:
@@ -40,7 +41,7 @@ def exclude_endorsing_peer_with_cpu_usage(org1_node_list, org2_node_list):
 def exclude_endorsing_peer_with_mem_usage(org1_node_list, org2_node_list):
     peers_to_be_excluded = []
 
-    res = req.post("http://172.25.0.14:5001/get_mem_list", headers={"content-type":"application/json"})
+    res = req.post("http://172.29.0.2:5001/get_mem_list", headers={"content-type":"application/json"})
     json_data = res.json()
 
     for peer in json_data:
@@ -60,7 +61,7 @@ def get_endorsing_peers_with_latency():
     org2_node_list = []
     peers = []
 
-    res = req.post("http://172.17.0.3:5000/get_latency_list", headers={"content-type":"application/json"})
+    res = req.post("http://172.29.0.5:5000/get_latency_list", headers={"content-type":"application/json"})
     json_data = res.json()
 
     for peer in json_data:
@@ -107,33 +108,45 @@ def calculate_avg_latency(json_data, peers):
 class GrpclbServicer(grpclb_pb2_grpc.GrpclbServicer):
     def Execute(self, request, context):
         peers, avg_latency = get_endorsing_peers_with_latency()
+
         # The response should be true if succeed
         response = loop.run_until_complete(cli.chaincode_invoke(
-                        requestor=org1_admin,  
-                        channel_name=request.channelName,  
-                        peers=peers,   
-                        args=request.args,
-                        cc_name=request.chaincodeName,  
-                        avg_latency=avg_latency,
-                        transient_map=None, # optional, for private data
-                        wait_for_event=True, # for being sure chaincode invocation has been commited in the ledger, default is on tx event
-                        ))
-
+                            requestor=org1_admin,  
+                            channel_name=request.channelName,  
+                            peers=peers,   
+                            fcn=request.functionName,
+                            args=request.args,
+                            cc_name=request.chaincodeName,  
+                            avg_latency=avg_latency,
+                            transient_map=None, # optional, for private data
+                            wait_for_event=True, # for being sure chaincode invocation has been commited in the ledger, default is on tx event
+                            ))
         # print(response)     # response -> chaincode_invoke return: proposal(header + payload)
 
         return grpclb_pb2.TxResponse(
-            # payload = [b'\xDE\xAD'],      # response.xxx 처럼 사용하여 TxResponse 채우기
-            payload = response.payload,
-            header = response.header,
+            response = response
         )
     
     def Query(self, request, context):
+        peers, avg_latency = get_endorsing_peers_with_latency()
+
+        # The response should be true if succeed
+        response = loop.run_until_complete(cli.chaincode_query(
+               requestor=org1_admin,
+               channel_name=request.channelName,
+               peers=peers,
+               args=request.args,
+               fcn=request.functionName,
+               cc_name=request.chaincodeName,
+               avg_latency=avg_latency
+               ))
+
         return grpclb_pb2.TxResponse(
-            payload = b'\xDE\xAD',
+            response = response
         )
     
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=100))
     grpclb_pb2_grpc.add_GrpclbServicer_to_server(
         GrpclbServicer(), server)
     server.add_insecure_port('[::]:50051')
