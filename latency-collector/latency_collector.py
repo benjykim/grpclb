@@ -38,9 +38,11 @@ def set_latency_list():
             
             # peer0 & peer1 외의 다른 peerX 없음
             if str(container.name).startswith('peer0'):
-                latency = str(res["average_latency"] + random.uniform(3,7))
+                # latency = str(res["average_latency"] + random.uniform(3,7))
+                latency = str(res["average_latency"])
             else:
-                latency = str(res["average_latency"] + random.uniform(3,10))
+                # latency = str(res["average_latency"] + random.uniform(3,10))
+                latency = str(res["average_latency"])
             
             # ex: {'node': 'peer1.org2.example.com', 'latency': 0.0} 
             latency_str = ('{"node"' + ":" + '\"' + node + '\",' + '\"latency"' + ":" + latency + '}')
